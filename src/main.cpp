@@ -28,12 +28,23 @@ std::string hasData(std::string s) {
   return "";
 }
 
-int main()
+int main(int argc, char *argv[])
 {
   uWS::Hub h;
 
   PID pid;
-  // TODO: Initialize the pid variable.
+  PID pid_throttle;
+
+  // Initialize the pid variable.
+  double init_steering_Kp = 0.12;//atof(argv[1]);
+  double init_steering_Ki = 0.000001;//atof(argv[2]);
+  double init_steering_Kd = 0.9;//atof(argv[3]);
+  pid.Init(init_steering_Kp, init_steering_Ki, init_steering_Kd);
+
+  // double init_throttle_Kp = atof(argv[4]);
+  // double init_throttle_Ki = atof(argv[5]);
+  // double init_throttle_Kd = atof(argv[6]);
+  // pid_throttle.Init(init_throttle_Kp, init_throttle_Ki, init_throttle_Kd);
 
   h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -48,22 +59,24 @@ int main()
         if (event == "telemetry") {
           // j[1] is the data JSON object
           double cte = std::stod(j[1]["cte"].get<std::string>());
-          double speed = std::stod(j[1]["speed"].get<std::string>());
-          double angle = std::stod(j[1]["steering_angle"].get<std::string>());
+          //double speed = std::stod(j[1]["speed"].get<std::string>());
+          //double angle = std::stod(j[1]["steering_angle"].get<std::string>());
           double steer_value;
-          /*
-          * TODO: Calcuate steering value here, remember the steering value is
-          * [-1, 1].
-          * NOTE: Feel free to play around with the throttle and speed. Maybe use
-          * another PID controller to control the speed!
-          */
-          
+          double throttle = 0.3;
+
+          //Calcuate steering value, value is [-1, 1]
+          pid.UpdateError(cte);
+          steer_value = pid.TotalError();
+
+          // pid_throttle.UpdateError();
+          // throttle = pid_throttle.TotalError();
+
           // DEBUG
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
+          std::cout << "CTE: " << cte << std::endl;
 
           json msgJson;
           msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = 0.3;
+          msgJson["throttle"] = throttle;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
@@ -76,8 +89,7 @@ int main()
     }
   });
 
-  // We don't need this since we're not using HTTP but if it's removed the program
-  // doesn't compile :-(
+  // We don't need this since we're not using HTTP but if it's removed the program doesn't compile :-(
   h.onHttpRequest([](uWS::HttpResponse *res, uWS::HttpRequest req, char *data, size_t, size_t) {
     const std::string s = "<h1>Hello world!</h1>";
     if (req.getUrl().valueLength == 1)

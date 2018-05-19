@@ -1,6 +1,8 @@
 #ifndef PID_H
 #define PID_H
 
+#include <vector>
+
 class PID {
 public:
   /*
@@ -12,10 +14,17 @@ public:
 
   /*
   * Coefficients
-  */ 
+  */
   double Kp;
   double Ki;
   double Kd;
+
+  /*
+  * Cross-Track Error
+  */
+  const int size = 100;
+  int i = 0;
+  std::vector<double> cte_history{std::vector<double>(size)};
 
   /*
   * Constructor
@@ -41,6 +50,7 @@ public:
   * Calculate the total PID error.
   */
   double TotalError();
+
 };
 
 #endif /* PID_H */
